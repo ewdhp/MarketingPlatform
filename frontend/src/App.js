@@ -45,6 +45,16 @@ const App = () => {
                 </RedirectIfAuthenticated>
               }
             />
+            <Route
+              path="/editor"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CodeEditor />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Protected Routes */}
             <Route
@@ -57,16 +67,7 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/editor"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <CodeEditor />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
+
             <Route
               path="/terminal"
               element={

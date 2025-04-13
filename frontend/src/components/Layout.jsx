@@ -1,44 +1,50 @@
 import React from 'react';
-import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Button } from '@mui/material';
+import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Import useAuth
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import AutomationIcon from '@mui/icons-material/Settings';
+import { useAuth } from '../context/AuthContext';
+import AppsIcon from '@mui/icons-material/Apps';
+import WidgetsIcon from '@mui/icons-material/Widgets';
 import ContentIcon from '@mui/icons-material/Article';
 import LogoutIcon from '@mui/icons-material/Logout';
 import TerminalIcon from '@mui/icons-material/Terminal';
 
-const drawerWidth = 60;
-
-const menuItems = [
-  { key: 'dashboard', text: '', icon: <DashboardIcon />, path: '/dashboard' },
-  { key: 'automation', text: '', icon: <AutomationIcon />, path: '/automation' },
-  { key: 'editor', text: '', icon: <ContentIcon />, path: '/editor' },
-  { key: 'terminal', text: '', icon: <TerminalIcon />, path: '/terminal' },
-];
-
 const Layout = ({ children }) => {
-  const navigate = useNavigate(); // Initialize navigate
-  const authContext = useAuth(); // Access AuthContext
+  const navigate = useNavigate();
+  const authContext = useAuth();
   const location = useLocation();
 
   const handleLogout = () => {
     console.log('Logging out...');
-    authContext.logout(); // Call the logout function from AuthContext
-    navigate('/'); // Redirect to the login page
+    authContext.logout();
+    navigate('/');
   };
+
+  const menuItems = [
+    { key: 'dashboard', text: '', icon: <AppsIcon />, action: () => navigate('/dashboard') },
+    { key: 'automation', text: '', icon: <WidgetsIcon />, action: () => navigate('/automation') },
+    { key: 'editor', text: '', icon: <ContentIcon />, action: () => navigate('/editor') },
+    { key: 'terminal', text: '', icon: <TerminalIcon />, action: () => navigate('/terminal') },
+    { key: 'logout', text: '', icon: <LogoutIcon />, action: handleLogout },
+  ];
 
   return (
     <Box sx={{ display: 'flex', width: '100%' }}>
-      {/* Left Drawer */}
+      {/* Drawer with dynamic width */}
       <Drawer
         variant="permanent"
         sx={{
-          width: drawerWidth,
           flexShrink: 0,
           [`& .MuiDrawer-paper`]: {
-            width: drawerWidth,
+
+            minWidth: 60,
+
             boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+
+
           },
         }}
       >
@@ -46,50 +52,45 @@ const Layout = ({ children }) => {
           {menuItems.map((item) => (
             <ListItem key={item.key} disablePadding>
               <ListItemButton
-                selected={location.pathname === item.path}
-                onClick={() => navigate(item.path)}
+                onClick={item.action}
+                sx={{
+                  justifyContent: 'center',
+                }}
               >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
+                <ListItemIcon
+                  sx={{
+                    justifyContent: 'center',
+                    minWidth: 'auto',
+                    marginTop: '5px',
+                    marginBottom: '10px',
+
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
               </ListItemButton>
             </ListItem>
           ))}
         </List>
-        {/* Logout Button */}
-        <Box
-          sx={{
-            marginTop: 'auto',
-            padding: 2,
-          }}
-        >
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: '#e0e0e0',
-              color: '#000',
-              '&:hover': { backgroundColor: '#d6d6d6' },
-            }}
-            startIcon={<LogoutIcon />}
-            fullWidth
-            onClick={handleLogout} // Call handleLogout on click
-          >
-            Logout
-          </Button>
-        </Box>
       </Drawer>
 
       {/* Content Area */}
       <Box
         component="main"
-        sx={{
-          flexGrow: 1,
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          height: '100vh',
-          backgroundColor: 'background.default',
-          overflow: 'auto',
+        sx={() => {
+
+          return {
+            flexGrow: 1,
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            height: '100vh',
+            backgroundColor: 'white',
+            overflow: 'auto',
+            marginLeft: '60px', // Adjust this based on the width of the drawer
+
+          };
         }}
       >
         {children}

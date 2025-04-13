@@ -7,7 +7,7 @@ const TerminalSocketContext = createContext();
 
 // Provider Component
 export const TerminalSocketProvider = ({ children }) => {
-    const terminals = useRef(new Map()); // Map to store terminal and socket instances by ID
+    const terminals = useRef(new Map());
 
     const createTerminal = (id) => {
         if (terminals.current.has(id)) {
@@ -21,8 +21,10 @@ export const TerminalSocketProvider = ({ children }) => {
         const terminal = new Terminal({
             cursorBlink: true,
             theme: {
-                background: '#ffffff',
-                foreground: '#000000',
+                background: '#041f4b', // Night blues color
+                foreground: 'white',
+
+
             },
         });
 
@@ -137,7 +139,12 @@ export const TerminalSocketProvider = ({ children }) => {
     };
 
     return (
-        <TerminalSocketContext.Provider value={{ createTerminal, getTerminal, disposeTerminal }}>
+        <TerminalSocketContext.Provider
+            value={{
+                createTerminal,
+                getTerminal,
+                disposeTerminal
+            }}>
             {children}
         </TerminalSocketContext.Provider>
     );

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTerminalSocket } from '../context/TerminalSocketProvider';
 import { Tabs, Tab, Box, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-
+import { FitAddon } from 'xterm-addon-fit';
 
 const MultiTerminal = ({ terminalId }) => {
     const { createTerminal, disposeTerminal } = useTerminalSocket();
@@ -19,9 +19,23 @@ const MultiTerminal = ({ terminalId }) => {
 
         if (terminal && terminalContainerRef.current) {
             terminal.open(terminalContainerRef.current);
+            // Add custom styles to hide the scrollbar
+            const viewport = terminalContainerRef.current.querySelector('.xterm-viewport');
+            if (viewport) {
+                viewport.style.scrollbarWidth = 'none'; // Firefox
+                viewport.style.msOverflowStyle = 'none'; // IE and Edge
+            }
+            // Use the FitAddon to fit the terminal to the container
+            const fitAddon = new FitAddon();
+            terminal.loadAddon(fitAddon);
+            fitAddon.fit(); // Automatically adjusts rows and columns
+
+            // Optionally, add a resize event listener
+            window.addEventListener('resize', () => fitAddon.fit());
             console.log(`Terminal "${terminalId}" initialized.`);
         } else {
             console.error(`Failed to initialize terminal "${terminalId}".`);
+            return
         }
 
     }, [createTerminal, disposeTerminal, terminalId]);
@@ -31,8 +45,9 @@ const MultiTerminal = ({ terminalId }) => {
             style={{
                 width: '100%',
                 height: '100%',
-                backgroundColor: '#000',
+                background: '#041f4b',
                 overflow: 'hidden',
+                padding: '5px',
             }}
             ref={terminalContainerRef}
         />
@@ -84,21 +99,22 @@ const MultiTabTerminal = () => {
             <Box
                 sx={{
                     flexGrow: 1, // Allow terminal content to take remaining height
-                    backgroundColor: '#000',
+                    backgroundColor: 'white',
                     overflow: 'hidden',
+                    padding: '10px',
                 }}
             >
                 {terminals.map((id, index) => (
-                    <div
+                    <Box
                         key={id}
-                        style={{
+                        sx={{
                             display: activeTab === index ? 'block' : 'none', // Show only active terminal
                             width: '100%',
                             height: '100%',
                         }}
                     >
                         <MultiTerminal terminalId={id} />
-                    </div>
+                    </Box>
                 ))}
             </Box>
         </Box>
