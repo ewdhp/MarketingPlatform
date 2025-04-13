@@ -9,7 +9,7 @@ const TerminalSocketContext = createContext();
 export const TerminalSocketProvider = ({ children }) => {
     const socketRef = useRef(null); // WebSocket instance
     const terminalRef = useRef(null); // Persistent Terminal instance
-
+    const inputBuffer = useRef('');
     // Explicit close function for controlled cleanup
     const explicitCloseConnection = () => {
         console.log('Explicitly closing terminal and WebSocket...');
@@ -43,10 +43,43 @@ export const TerminalSocketProvider = ({ children }) => {
                     );
                     terminalRef.current.write('\r\n> ');
                     terminalRef.current.focus();
+
+
                 } else {
                     console.warn('Terminal is not initialized during WebSocket onopen');
                 }
+                // check if terminalRef.current is null
+                if (terminalRef.current) {
+                    terminalRef.current.onData((data) => {
+                        if (data === '\r') {
+                            // Send the buffered input to the WebSocket on Enter
+                            if (inputBuffer.current.trim() !== '') {
+                                socketRef.current.send(
+                                    JSON.stringify({
+                                        type: 'command',
+                                        command: inputBuffer.current,
+                                    })
+                                );
+                                inputBuffer.current = ''; // Clear the buffer
+                            }
+                            terminalRef.current.write('\r\n> '); // Display a new prompt
+                        } else if (data === '\u007F') {
+                            // Handle backspace
+                            if (inputBuffer.current.length > 0) {
+                                inputBuffer.current = inputBuffer.current.slice(0, -1);
+                                terminalRef.current.write('\b \b'); // Erase the last character
+                            }
+                        } else {
+                            // Add the input to the buffer and display it
+                            inputBuffer.current += data;
+                            terminalRef.current.write(data);
+                        }
+                    });
+                }
+
+
             };
+
 
             // Handle incoming WebSocket messages
             socketRef.current.onmessage = (event) => {
@@ -96,6 +129,7 @@ export const TerminalSocketProvider = ({ children }) => {
                 }
             };
         }
+
 
         // Terminal initialization handled by consumer components
     }, []);
