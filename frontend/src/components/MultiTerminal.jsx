@@ -1,14 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 import { Terminal } from 'xterm';
 import 'xterm/css/xterm.css';
-import { useTerminalSocket } from '../context/TerminalSocketProvider'; // Import context hook
+import { useTerminalSocket } from '../context/TerminalSocketProvider';
 
 const MultiTerminal = () => {
-    const { socketRef, terminalRef, explicitCloseConnection } = useTerminalSocket(); // Get refs and cleanup function
-    const terminalContainerRef = useRef(null); // Local DOM ref for terminal container
+    const { terminalRef, socketRef } = useTerminalSocket();
+    const terminalContainerRef = useRef(null); // Local DOM ref
+    const inputBuffer = useRef('');
+
+    console.log('TerminalRef:', terminalRef);
+    console.log('SocketRef:', socketRef);
 
     useEffect(() => {
-        // Initialize Terminal if not already created
         if (!terminalRef.current) {
             console.log('Initializing Terminal...');
             const terminal = new Terminal({
@@ -19,55 +22,62 @@ const MultiTerminal = () => {
                 },
             });
 
-            terminalRef.current = terminal; // Store terminal in shared context
+            terminalRef.current = terminal; // Persist terminal in context
 
             if (terminalContainerRef.current) {
-                terminal.open(terminalContainerRef.current); // Attach terminal to DOM
-                console.log('Terminal is ready');
+                terminal.open(terminalContainerRef.current);
+                console.log('Terminal initialized');
             }
 
-            // Handle terminal input
-            terminal.onData((data) => {
-                if (socketRef.current?.readyState === WebSocket.OPEN) {
-                    if (data === '\r') {
+            terminalRef.current.onData((data) => {
+                if (data === '\r') {
+                    // Send the buffered input to the WebSocket on Enter
+                    if (inputBuffer.current.trim() !== '') {
                         socketRef.current.send(
                             JSON.stringify({
                                 type: 'command',
-                                command: terminal.inputBuffer || '',
+                                command: inputBuffer.current,
                             })
                         );
-                        terminal.inputBuffer = ''; // Clear input buffer
-                    } else if (data === '\u007F') {
-                        // Handle backspace
-                        if (terminal.inputBuffer?.length > 0) {
-                            terminal.inputBuffer = terminal.inputBuffer.slice(0, -1);
-                            terminal.write('\b \b');
-                        }
-                    } else {
-                        terminal.inputBuffer = (terminal.inputBuffer || '') + data;
-                        terminal.write(data);
+                        inputBuffer.current = ''; // Clear the buffer
                     }
+                    terminalRef.current.write('\r\n> '); // Display a new prompt
+                } else if (data === '\u007F') {
+                    // Handle backspace
+                    if (inputBuffer.current.length > 0) {
+                        inputBuffer.current = inputBuffer.current.slice(0, -1);
+                        terminalRef.current.write('\b \b'); // Erase the last character
+                    }
+                } else {
+                    // Add the input to the buffer and display it
+                    inputBuffer.current += data;
+                    terminalRef.current.write(data);
                 }
             });
+        } else if (terminalRef.current && terminalContainerRef.current) {
+            // Reuse the existing terminal
+            console.log('Reusing existing Terminal instance...');
+            terminalRef.current.open(terminalContainerRef.current);
         }
+
+        return () => {
+
+        };
     }, [socketRef, terminalRef]);
 
     return (
-        <div>
-            <div
-                style={{
-                    width: '100%',
-                    height: '300px',
-                    backgroundColor: '#000',
-                    overflow: 'hidden',
-                }}
-                ref={terminalContainerRef} // Attach container ref
-            />
-            <button onClick={explicitCloseConnection} style={{ marginTop: '10px' }}>
-                Close Connection
-            </button>
-        </div>
+        <div
+            style={{
+                width: '100%',
+                height: '300px',
+                backgroundColor: '#000',
+                overflow: 'hidden',
+            }}
+            ref={terminalContainerRef} // Attach container ref
+        />
     );
 };
 
 export default MultiTerminal;
+
+

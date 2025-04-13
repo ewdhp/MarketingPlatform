@@ -9,6 +9,7 @@ import TwilioSMS from './components/login/TwilioSMS';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import MultiTerminal from './components/MultiTerminal';
 import { TerminalSocketProvider } from './context/TerminalSocketProvider';
+
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/" />;
@@ -32,66 +33,65 @@ const App = () => {
   return (
     <Router>
       <AuthProvider>
-        <CssBaseline />
-        <Routes>
-          {/* Entry Page (Login) */}
-          <Route
-            path="/"
-            element={
-              <RedirectIfAuthenticated>
-                <TwilioSMS />
-              </RedirectIfAuthenticated>
-            }
-          />
+        <TerminalSocketProvider> {/* Lift TerminalSocketProvider to wrap the entire app */}
+          <CssBaseline />
+          <Routes>
+            {/* Entry Page (Login) */}
+            <Route
+              path="/"
+              element={
+                <RedirectIfAuthenticated>
+                  <TwilioSMS />
+                </RedirectIfAuthenticated>
+              }
+            />
 
-          {/* Protected Routes */}
-          <Route
-            path="/automation"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Automation />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/editor"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <CodeEditor />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/terminal"
-            element={
-              <ProtectedRoute>
-                <TerminalSocketProvider> {/* Wrap MultiTerminal with the context provider */}
+            {/* Protected Routes */}
+            <Route
+              path="/automation"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Automation />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/editor"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CodeEditor />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/terminal"
+              element={
+                <ProtectedRoute>
                   <Layout>
                     <MultiTerminal />
                   </Layout>
-                </TerminalSocketProvider>
-              </ProtectedRoute>
-            }
-          />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <MainDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <MainDashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Fallback Route for Not Found */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* Fallback Route for Not Found */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TerminalSocketProvider>
       </AuthProvider>
     </Router>
   );

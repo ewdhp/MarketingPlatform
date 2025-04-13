@@ -8,8 +8,9 @@ const TerminalSocketContext = createContext();
 // Provider Component
 export const TerminalSocketProvider = ({ children }) => {
     const socketRef = useRef(null); // WebSocket instance
-    const terminalRef = useRef(null); // Terminal instance
+    const terminalRef = useRef(null); // Persistent Terminal instance
 
+    // Explicit close function for controlled cleanup
     const explicitCloseConnection = () => {
         console.log('Explicitly closing terminal and WebSocket...');
         if (socketRef.current) {
@@ -17,24 +18,69 @@ export const TerminalSocketProvider = ({ children }) => {
             socketRef.current = null; // Clear reference
         }
         if (terminalRef.current) {
-            terminalRef.current.dispose(); // Dispose of terminal instance
+            terminalRef.current.dispose(); // Dispose terminal instance
             terminalRef.current = null; // Clear reference
         }
     };
 
     useEffect(() => {
-        // Initialize WebSocket if not already created
-        if (!socketRef.current) {
+        console.log('TerminalSocketProvider useEffect triggered');
+        if (!socketRef.current || socketRef.current?.readyState !== WebSocket.OPEN) {
+            console.log('Initializing WebSocket...');
             socketRef.current = new WebSocket('wss://localhost:5500');
 
             socketRef.current.onopen = () => {
                 console.log('WebSocket connection established');
+                if (terminalRef.current) {
+                    terminalRef.current.writeln('Connected to WebSocket server');
+                    socketRef.current.send(
+                        JSON.stringify({
+                            type: 'connect',
+                            host: '127.0.0.1',
+                            username: 'ewd',
+                            password: '2020',
+                        })
+                    );
+                    terminalRef.current.write('\r\n> ');
+                    terminalRef.current.focus();
+                } else {
+                    console.warn('Terminal is not initialized during WebSocket onopen');
+                }
             };
 
+            // Handle incoming WebSocket messages
             socketRef.current.onmessage = (event) => {
-                console.log('Message from server:', event.data);
-                // Write incoming data to the terminal if it exists
-                if (terminalRef.current) {
+                console.log('Raw WebSocket message:', event.data);
+                if (!terminalRef.current) {
+                    console.error('Terminal is not initialized');
+                    return;
+                }
+
+                try {
+                    const msg = JSON.parse(event.data);
+                    switch (msg.type) {
+                        case 'output':
+                            terminalRef.current.write(msg.data);
+                            break;
+                        case 'connected':
+                            terminalRef.current.writeln('\r\n[SSH CONNECTED]');
+                            terminalRef.current.write('\r\n> ');
+                            break;
+                        case 'disconnected':
+                            terminalRef.current.writeln('\r\n[SSH DISCONNECTED]');
+                            break;
+                        case 'error':
+                            terminalRef.current.writeln(`\r\n[ERROR]: ${msg.message}`);
+                            break;
+                        case 'status':
+                            terminalRef.current.writeln(`\r\n[STATUS]: ${msg.message}`);
+                            break;
+                        default:
+                            terminalRef.current.write(event.data); // Fallback case
+                            break;
+                    }
+                } catch (e) {
+
                     terminalRef.current.write(event.data);
                 }
             };
@@ -45,6 +91,9 @@ export const TerminalSocketProvider = ({ children }) => {
 
             socketRef.current.onclose = () => {
                 console.log('WebSocket connection closed');
+                if (terminalRef.current) {
+                    terminalRef.current.writeln('[WebSocket Closed]');
+                }
             };
         }
 
@@ -65,4 +114,4 @@ export const useTerminalSocket = () => {
         throw new Error('useTerminalSocket must be used within a TerminalSocketProvider');
     }
     return context;
-}
+};
