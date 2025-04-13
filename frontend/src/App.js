@@ -7,7 +7,8 @@ import CodeEditor from './components/CodeEditor';
 import MainDashboard from './views/MainDashboard';
 import TwilioSMS from './components/login/TwilioSMS';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import TerminalSSH from './components/TerminalSSH';
+import MultiTerminal from './components/MultiTerminal';
+import { TerminalSocketProvider } from './context/TerminalSocketProvider';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/" />;
@@ -68,12 +69,15 @@ const App = () => {
             path="/terminal"
             element={
               <ProtectedRoute>
-                <Layout>
-                  <TerminalSSH />
-                </Layout>
+                <TerminalSocketProvider> {/* Wrap MultiTerminal with the context provider */}
+                  <Layout>
+                    <MultiTerminal />
+                  </Layout>
+                </TerminalSocketProvider>
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/dashboard"
             element={

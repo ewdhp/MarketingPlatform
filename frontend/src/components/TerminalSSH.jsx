@@ -93,8 +93,8 @@ const TerminalSSH = () => {
                         terminalInstance.current.write(msg.data);
                         break;
                     case 'connected':
-                        terminalInstance.current.writeln('\r\n[SSH CONNECTED]');
-                        terminalInstance.current.write('\r\n> ');
+                        // terminalInstance.current.writeln('\r\n[SSH CONNECTED]');
+                        // terminalInstance.current.write('\r\n> ');
                         break;
                     case 'disconnected':
                         terminalInstance.current.writeln('\r\n[SSH DISCONNECTED]');
@@ -130,10 +130,7 @@ const TerminalSSH = () => {
 
         return () => {
             window.removeEventListener('resize', handleResize);
-            terminalInstance.current.dispose();
-            if (socketRef.current) {
-                socketRef.current.close();
-            }
+
         };
     }, []);
 
