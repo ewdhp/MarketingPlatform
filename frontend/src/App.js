@@ -3,11 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { CssBaseline } from '@mui/material';
 import Layout from './components/Layout';
 import Automation from './views/Automation';
-import Content from './views/Content';
+import CodeEditor from './components/CodeEditor';
 import MainDashboard from './views/MainDashboard';
 import TwilioSMS from './components/login/TwilioSMS';
 import { AuthProvider, useAuth } from './context/AuthContext';
-
+import TerminalSSH from './components/TerminalSSH';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/" />;
@@ -55,11 +55,21 @@ const App = () => {
             }
           />
           <Route
-            path="/content"
+            path="/editor"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Content />
+                  <CodeEditor />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/terminal"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TerminalSSH />
                 </Layout>
               </ProtectedRoute>
             }

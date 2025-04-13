@@ -6,13 +6,14 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import AutomationIcon from '@mui/icons-material/Settings';
 import ContentIcon from '@mui/icons-material/Article';
 import LogoutIcon from '@mui/icons-material/Logout';
-
-const drawerWidth = 240;
+import TerminalIcon from '@mui/icons-material/Terminal';
+const drawerWidth = 60;
 
 const menuItems = [
-  { text: 'Main Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Automation', icon: <AutomationIcon />, path: '/automation' },
-  { text: 'Content', icon: <ContentIcon />, path: '/content' },
+  { text: '', icon: <DashboardIcon />, path: '/dashboard' },
+  { text: '', icon: <AutomationIcon />, path: '/automation' },
+  { text: '', icon: <ContentIcon />, path: '/editor' },
+  { text: '', icon: <TerminalIcon />, path: '/terminal' },
 ];
 
 const Layout = ({ children }) => {
