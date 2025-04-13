@@ -1,58 +1,39 @@
 import React, { useEffect, useRef } from 'react';
-import { Terminal } from 'xterm';
-import 'xterm/css/xterm.css';
 import { useTerminalSocket } from '../context/TerminalSocketProvider';
 
-const MultiTerminal = () => {
-    const { terminalRef, socketRef } = useTerminalSocket();
-    const terminalContainerRef = useRef(null); // Local DOM ref
-
-
-    console.log('TerminalRef:', terminalRef);
-    console.log('SocketRef:', socketRef);
+const MultiTerminal = ({ terminalId }) => {
+    const { createTerminal, disposeTerminal } = useTerminalSocket();
+    const terminalContainerRef = useRef(null);
 
     useEffect(() => {
-        if (!terminalRef.current) {
-            console.log('Initializing Terminal...');
-            const terminal = new Terminal({
-                cursorBlink: true,
-                theme: {
-                    background: '#1e1e1e',
-                    foreground: '#ffffff',
-                },
-            });
-
-            terminalRef.current = terminal; // Persist terminal in context
-
-            if (terminalContainerRef.current) {
-                terminal.open(terminalContainerRef.current);
-                console.log('Terminal initialized');
-            }
-
-        } else if (terminalRef.current && terminalContainerRef.current) {
-            // Reuse the existing terminal
-            console.log('Reusing existing Terminal instance...');
-            terminalRef.current.open(terminalContainerRef.current);
+        if (!terminalContainerRef.current) {
+            console.error('Terminal container is not available.');
+            return;
         }
 
-        return () => {
+        // Create or get the terminal for the given ID
+        const { terminal } = createTerminal(terminalId);
 
-        };
-    }, [socketRef, terminalRef]);
+        if (terminal && terminalContainerRef.current) {
+            terminal.open(terminalContainerRef.current);
+            console.log(`Terminal "${terminalId}" initialized.`);
+        } else {
+            console.error(`Failed to initialize terminal "${terminalId}".`);
+        }
+
+    }, [createTerminal, disposeTerminal, terminalId]);
 
     return (
         <div
             style={{
                 width: '100%',
-                height: '300px',
+                height: '100%',
                 backgroundColor: '#000',
                 overflow: 'hidden',
             }}
-            ref={terminalContainerRef} // Attach container ref
+            ref={terminalContainerRef}
         />
     );
 };
 
 export default MultiTerminal;
-
-
