@@ -7,13 +7,14 @@ import AutomationIcon from '@mui/icons-material/Settings';
 import ContentIcon from '@mui/icons-material/Article';
 import LogoutIcon from '@mui/icons-material/Logout';
 import TerminalIcon from '@mui/icons-material/Terminal';
+
 const drawerWidth = 60;
 
 const menuItems = [
-  { text: '', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: '', icon: <AutomationIcon />, path: '/automation' },
-  { text: '', icon: <ContentIcon />, path: '/editor' },
-  { text: '', icon: <TerminalIcon />, path: '/terminal' },
+  { key: 'dashboard', text: '', icon: <DashboardIcon />, path: '/dashboard' },
+  { key: 'automation', text: '', icon: <AutomationIcon />, path: '/automation' },
+  { key: 'editor', text: '', icon: <ContentIcon />, path: '/editor' },
+  { key: 'terminal', text: '', icon: <TerminalIcon />, path: '/terminal' },
 ];
 
 const Layout = ({ children }) => {
@@ -43,7 +44,7 @@ const Layout = ({ children }) => {
       >
         <List>
           {menuItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
+            <ListItem key={item.key} disablePadding>
               <ListItemButton
                 selected={location.pathname === item.path}
                 onClick={() => navigate(item.path)}

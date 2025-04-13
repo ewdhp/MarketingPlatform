@@ -7,77 +7,135 @@ const TerminalSSH = () => {
     const terminalInstance = useRef(null);
     const socketRef = useRef(null);
     const [connected, setConnected] = useState(false);
+    const inputBufferRef = useRef(''); // Use ref so buffer doesn't reset on re-renders
 
     useEffect(() => {
-        // Initialize the terminal
+        // Init terminal
         terminalInstance.current = new Terminal({
             cursorBlink: true,
             theme: {
-                background: '#1e1e1e', // Dark background
-                foreground: '#ffffff', // Light text
+                background: '#1e1e1e',
+                foreground: '#ffffff',
             },
         });
 
-        // Attach the terminal to the DOM
         if (terminalRef.current) {
             terminalInstance.current.open(terminalRef.current);
+            // Ensure the terminal is focused after mounting
+            requestAnimationFrame(() => {
+                terminalInstance.current?.focus();
+            });
         }
 
-        // Connect to the WebSocket server
-        socketRef.current = new WebSocket('ws://localhost:8080'); // Replace with your WebSocket server URL
+        const handleResize = () => {
+            if (terminalInstance.current && terminalRef.current) {
+                const cols = Math.floor(terminalRef.current.offsetWidth / 10);
+                const rows = Math.floor(terminalRef.current.offsetHeight / 20);
+                terminalInstance.current.resize(cols, rows);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        // Init WebSocket
+        socketRef.current = new WebSocket('wss://localhost:5500');
 
         socketRef.current.onopen = () => {
             terminalInstance.current.writeln('Connected to WebSocket server');
             setConnected(true);
 
-            // Send SSH connection details
             socketRef.current.send(
                 JSON.stringify({
                     type: 'connect',
-                    host: 'your-ssh-server.com', // Replace with your SSH server
-                    username: 'your-username', // Replace with your SSH username
-                    password: 'your-password', // Replace with your SSH password
+                    host: '127.0.0.1',
+                    username: 'ewd',
+                    password: '2020',
                 })
             );
+
+            terminalInstance.current.write('\r\n> ');
+            terminalInstance.current.focus();
+
+            // ✅ Attach input handler ONLY after connection
+            terminalInstance.current.onData((data) => {
+                if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+                    if (data === '\r') {
+                        socketRef.current.send(
+                            JSON.stringify({
+                                type: 'command',
+                                command: inputBufferRef.current,
+                            })
+                        );
+                        inputBufferRef.current = '';
+                        terminalInstance.current.write('\r\n> ');
+                    } else if (data === '\u007F') {
+                        if (inputBufferRef.current.length > 0) {
+                            inputBufferRef.current = inputBufferRef.current.slice(0, -1);
+                            terminalInstance.current.write('\b \b');
+                        }
+                    } else {
+                        inputBufferRef.current += data;
+                        terminalInstance.current.write(data);
+                    }
+                } else {
+                    console.warn('WebSocket is not connected or ready. Input ignored.');
+                }
+            });
         };
 
         socketRef.current.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-
-            if (message.type === 'output') {
-                terminalInstance.current.write(message.data);
-            } else if (message.type === 'status') {
-                terminalInstance.current.writeln(`\r\n[STATUS]: ${message.message}`);
-            } else if (message.type === 'error') {
-                terminalInstance.current.writeln(`\r\n[ERROR]: ${message.message}`);
+            console.log('Raw WebSocket message:', event.data);
+            try {
+                const msg = JSON.parse(event.data);
+                switch (msg.type) {
+                    case 'output':
+                        terminalInstance.current.write(msg.data);
+                        break;
+                    case 'connected':
+                        terminalInstance.current.writeln('\r\n[SSH CONNECTED]');
+                        terminalInstance.current.write('\r\n> ');
+                        break;
+                    case 'disconnected':
+                        terminalInstance.current.writeln('\r\n[SSH DISCONNECTED]');
+                        break;
+                    case 'error':
+                        terminalInstance.current.writeln(`\r\n[ERROR]: ${msg.message}`);
+                        break;
+                    case 'status':
+                        terminalInstance.current.writeln(`\r\n[STATUS]: ${msg.message}`);
+                        break;
+                    default:
+                        terminalInstance.current.write(event.data); // fallback
+                        break;
+                }
+            } catch {
+                terminalInstance.current.write(event.data);
             }
         };
+
+
+
 
         socketRef.current.onclose = () => {
             terminalInstance.current.writeln('\r\nConnection closed');
             setConnected(false);
+            socketRef.current = null;
         };
 
-        // Handle terminal input
-        terminalInstance.current.onData((data) => {
-            if (connected) {
-                socketRef.current.send(
-                    JSON.stringify({
-                        type: 'command',
-                        command: data,
-                    })
-                );
-            }
-        });
+        socketRef.current.onerror = (error) => {
+            terminalInstance.current.writeln(`\r\n[ERROR]: ${error.message}`);
+        };
+
 
         return () => {
-            // Cleanup on component unmount
+            window.removeEventListener('resize', handleResize);
             terminalInstance.current.dispose();
             if (socketRef.current) {
                 socketRef.current.close();
             }
         };
-    }, [connected]);
+    }, []);
 
     return (
         <div
@@ -86,8 +144,10 @@ const TerminalSSH = () => {
                 width: '100%',
                 height: '100%',
                 overflow: 'hidden',
+                zIndex: 1, // Ensure the terminal is visible and not obstructed
             }}
-        ></div>
+            onClick={() => terminalInstance.current?.focus()} // Refocus the terminal on click
+        />
     );
 };
 

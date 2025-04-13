@@ -1,95 +1,150 @@
-#nullable enable
 using System;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-using MarketingPlatform.Services.Auth;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Renci.SshNet;
 
 namespace MarketingPlatform.Middleware
 {
     public class UnifiedAuth
     {
-        private readonly RequestDelegate _next;
-        private readonly TokenValidationService _tokenValidationService;
+        private readonly RequestDelegate _next; // Define the _next field
+        private readonly ILogger<UnifiedAuth> _logger;
 
-        public UnifiedAuth
-        (
-            RequestDelegate next,
-            TokenValidationService tokenValidationService)
+        public UnifiedAuth(RequestDelegate next, ILogger<UnifiedAuth> logger)
         {
-            _next = next ?? throw new ArgumentNullException(nameof(next));
-            _tokenValidationService = tokenValidationService ??
-            throw new ArgumentNullException(nameof(tokenValidationService));
+            _next = next ?? throw new ArgumentNullException(nameof(next)); // Initialize _next
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Check if the request is a WebSocket request
             if (context.WebSockets.IsWebSocketRequest)
             {
-                var token = context.Request
-                .Headers["Authorization"].ToString();
-
-                if (string.IsNullOrWhiteSpace(token))
-                {
-                    context.Response.StatusCode = 400; // Bad Request
-                    await context.Response.WriteAsync
-                    ("Authorization token is missing.");
-                    return;
-                }
-
-                var (isValid, claims) = _tokenValidationService
-                    .ValidateToken(token);
-                if (!isValid)
-                {
-                    context.Response.StatusCode = 401; // Unauthorized
-                    await context.Response.WriteAsync("Invalid token.");
-                    return;
-                }
-
-                // If valid, proceed with WebSocket connection
-                var webSocket = await context
-                .WebSockets.AcceptWebSocketAsync();
-                await HandleWebSocketConnection(webSocket, token);
+                var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                await HandleWebSocketConnection(webSocket);
             }
             else
             {
-                // For non-WebSocket requests, pass to the next middleware
-                await _next(context);
+                await _next(context); // Pass the request to the next middleware
             }
         }
+private async Task HandleWebSocketConnection(System.Net.WebSockets.WebSocket webSocket)
+{
+    var buffer = new byte[1024 * 4];
+    _logger.LogInformation("WebSocket connection established.");
 
-        private async Task
-        HandleWebSocketConnection
-        (System.Net.WebSockets.WebSocket webSocket, string token)
+    try
+    {
+        // Receive the first message containing SSH connection details
+        var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
+        var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+
+        if (string.IsNullOrWhiteSpace(message))
         {
-            // Example WebSocket handling logic
-            var buffer = new byte[1024 * 4];
-            var result = await webSocket.ReceiveAsync
-            (new ArraySegment<byte>(buffer),
-            System.Threading.CancellationToken.None);
+            _logger.LogError("Received empty message from WebSocket client.");
+            await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.InvalidPayloadData, "Empty message received", System.Threading.CancellationToken.None);
+            return;
+        }
 
+        _logger.LogInformation("Received SSH connection details: {Message}", message);
+
+        // Deserialize SSH details
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var sshDetails = JsonSerializer.Deserialize<SshDetails>(message, options);
+
+        if (sshDetails == null || string.IsNullOrEmpty(sshDetails.Host) || string.IsNullOrEmpty(sshDetails.Username) || string.IsNullOrEmpty(sshDetails.Password))
+        {
+            throw new ArgumentException("Invalid SSH details. Host, username, and password must be provided.");
+        }
+
+        _logger.LogInformation("Attempting to connect to SSH server at {Host} with username {Username}", sshDetails.Host, sshDetails.Username);
+
+        using (var sshClient = new SshClient(sshDetails.Host, sshDetails.Username, sshDetails.Password))
+        {
+            sshClient.Connect();
+            _logger.LogInformation("SSH connection established to {Host}.", sshDetails.Host);
+
+            var shellStream = sshClient.CreateShellStream("xterm", 80, 24, 800, 600, 1024);
+            _logger.LogInformation("SSH shell stream created.");
+
+            // Start reading from the shell stream in a background task
+            _ = Task.Run(async () =>
+            {
+                var sshBuffer = new byte[1024];
+                while (sshClient.IsConnected)
+                {
+                    try
+                    {
+                        var bytesRead = shellStream.Read(sshBuffer, 0, sshBuffer.Length);
+                        if (bytesRead > 0)
+                        {
+                            var sshOutput = Encoding.UTF8.GetString(sshBuffer, 0, bytesRead);
+                            _logger.LogDebug("Received data from SSH: {Output}", sshOutput);
+
+                            var responseBytes = Encoding.UTF8.GetBytes(sshOutput);
+                            await webSocket.SendAsync(new ArraySegment<byte>(responseBytes), System.Net.WebSockets.WebSocketMessageType.Text, true, System.Threading.CancellationToken.None);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error while reading from SSH shell stream.");
+                        break;
+                    }
+                }
+            });
+
+            // Handle WebSocket input and forward it to the SSH shell
             while (!result.CloseStatus.HasValue)
             {
-                var message = System.Text.Encoding.UTF8.
-                GetString(buffer, 0, result.Count);
-                Console.WriteLine($"Received: {message}");
+                try
+                {
+                    result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
+                    message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    _logger.LogDebug("Received data from WebSocket client: {Message}", message);
 
-                var responseMessage = System.Text.Encoding
-                .UTF8.GetBytes("Message received.");
-
-                await webSocket.SendAsync(new ArraySegment<byte>
-                (responseMessage), System.Net.WebSockets
-                .WebSocketMessageType.Text, true,
-                System.Threading.CancellationToken.None);
-
-                result = await webSocket.ReceiveAsync
-                (new ArraySegment<byte>(buffer),
-                System.Threading.CancellationToken.None);
+                    // Parse the WebSocket message as JSON
+                    var commandMessage = JsonSerializer.Deserialize<SshDetails>(message, options);
+                    if (commandMessage?.Type == "command" && !string.IsNullOrEmpty(commandMessage.Command))
+                    {
+                        _logger.LogInformation("Executing command: {Command}", commandMessage.Command);
+                        shellStream.WriteLine(commandMessage.Command);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Invalid command message received: {Message}", message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error while handling WebSocket input.");
+                    break;
+                }
             }
-
-            await webSocket.CloseAsync(result.CloseStatus.Value,
-            result.CloseStatusDescription, System.Threading
-            .CancellationToken.None);
         }
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error handling WebSocket connection.");
+    }
+    finally
+    {
+        if (webSocket.State == System.Net.WebSockets.WebSocketState.Open)
+        {
+            await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Connection closed", System.Threading.CancellationToken.None);
+        }
+        _logger.LogInformation("WebSocket connection closed.");
+    }
+}
+        private class SshDetails
+{
+    public string Type { get; set; } // Handles the "type" field
+    public string Host { get; set; } // SSH host
+    public string Username { get; set; } // SSH username
+    public string Password { get; set; } // SSH password
+    public string Command { get; set; } // Command to execute
+}
     }
 }

@@ -148,13 +148,11 @@ namespace MarketingPlatform
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // Add JwtMiddleware for HTTP requests
-            app.UseMiddleware<JwtMiddleware>();
-
-            // Add WebSocketAuthMiddleware for WebSocket requests
+            // Add UnifiedAuth middleware for WebSocket requests
             app.UseMiddleware<UnifiedAuth>();
 
-            // Lock middleware to prevent multiple requests from the same user
+            // Add other middlewares as needed
+            app.UseMiddleware<JwtMiddleware>();
             app.UseMiddleware<UserRequestLockMiddleware>();
 
             app.UseEndpoints(endpoints =>
