@@ -17,24 +17,17 @@ export const TerminalSocketProvider = ({ children }) => {
 
         console.log(`Creating terminal with ID "${id}"...`);
 
-        // Create a new terminal instance
         const terminal = new Terminal({
             cursorBlink: true,
             theme: {
-                background: '#041f4b', // Night blues color
+                background: '#041f4b',
                 foreground: 'white',
-
-
             },
         });
 
-        // Create a new WebSocket instance
         const socket = new WebSocket('wss://localhost:5500');
-
-        // Input buffer for the terminal
         const inputBuffer = { current: '' };
 
-        // Handle WebSocket events
         socket.onopen = () => {
             console.log(`WebSocket connection established for terminal "${id}"`);
             terminal.writeln('Connected to WebSocket server');
@@ -49,28 +42,25 @@ export const TerminalSocketProvider = ({ children }) => {
             terminal.write('\r\n> ');
             terminal.focus();
 
-            // Handle terminal input
             terminal.onData((data) => {
                 if (data === '\r') {
-                    // Send the buffered input to the WebSocket on Enter
-                    if (inputBuffer.current.trim() !== '') {
+                    const sanitizedCommand = inputBuffer.current.trim();
+                    if (sanitizedCommand !== '') {
                         socket.send(
                             JSON.stringify({
                                 type: 'command',
-                                command: inputBuffer.current,
+                                command: sanitizedCommand,
                             })
                         );
-                        inputBuffer.current = ''; // Clear the buffer
+                        inputBuffer.current = '';
                     }
-                    terminal.write('\r\n> '); // Display a new prompt
+                    terminal.write('\r\n> ');
                 } else if (data === '\u007F') {
-                    // Handle backspace
                     if (inputBuffer.current.length > 0) {
                         inputBuffer.current = inputBuffer.current.slice(0, -1);
-                        terminal.write('\b \b'); // Erase the last character
+                        terminal.write('\b \b');
                     }
                 } else {
-                    // Add the input to the buffer and display it
                     inputBuffer.current += data;
                     terminal.write(data);
                 }
@@ -78,7 +68,6 @@ export const TerminalSocketProvider = ({ children }) => {
         };
 
         socket.onmessage = (event) => {
-            console.log(`Message received for terminal "${id}":`, event.data);
             try {
                 const msg = JSON.parse(event.data);
                 switch (msg.type) {
@@ -99,7 +88,7 @@ export const TerminalSocketProvider = ({ children }) => {
                         terminal.writeln(`\r\n[STATUS]: ${msg.message}`);
                         break;
                     default:
-                        terminal.write(event.data); // Fallback case
+                        terminal.write(event.data);
                         break;
                 }
             } catch (e) {
@@ -116,7 +105,6 @@ export const TerminalSocketProvider = ({ children }) => {
             terminal.writeln('[WebSocket Closed]');
         };
 
-        // Store the terminal and socket in the map
         terminals.current.set(id, { terminal, socket, inputBuffer });
 
         return { terminal, socket };
@@ -124,6 +112,10 @@ export const TerminalSocketProvider = ({ children }) => {
 
     const getTerminal = (id) => {
         return terminals.current.get(id);
+    };
+
+    const getAllTerminals = () => {
+        return Array.from(terminals.current.keys()); // Return all terminal IDs
     };
 
     const disposeTerminal = (id) => {
@@ -143,8 +135,10 @@ export const TerminalSocketProvider = ({ children }) => {
             value={{
                 createTerminal,
                 getTerminal,
-                disposeTerminal
-            }}>
+                getAllTerminals, // Expose the method to get all terminal IDs
+                disposeTerminal,
+            }}
+        >
             {children}
         </TerminalSocketContext.Provider>
     );

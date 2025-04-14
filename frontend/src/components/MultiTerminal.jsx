@@ -20,7 +20,8 @@ const MultiTerminal = ({ terminalId }) => {
         if (terminal && terminalContainerRef.current) {
             terminal.open(terminalContainerRef.current);
             // Add custom styles to hide the scrollbar
-            const viewport = terminalContainerRef.current.querySelector('.xterm-viewport');
+            const viewport = terminalContainerRef
+                .current.querySelector('.xterm-viewport');
             if (viewport) {
                 viewport.style.scrollbarWidth = 'none'; // Firefox
                 viewport.style.msOverflowStyle = 'none'; // IE and Edge
@@ -37,7 +38,6 @@ const MultiTerminal = ({ terminalId }) => {
             console.error(`Failed to initialize terminal "${terminalId}".`);
             return
         }
-
     }, [createTerminal, disposeTerminal, terminalId]);
 
     return (
@@ -57,6 +57,18 @@ const MultiTerminal = ({ terminalId }) => {
 const MultiTabTerminal = () => {
     const [terminals, setTerminals] = useState([]); // Track terminal IDs
     const [activeTab, setActiveTab] = useState(0); // Track the active tab
+    const { createTerminal, getAllTerminals } = useTerminalSocket(); // Access the createTerminal and getAllTerminals functions
+
+    useEffect(() => {
+        // Get all active terminals when the component is mounted
+        const activeTerminals = getAllTerminals();
+        setTerminals(activeTerminals);
+
+        // Reinitialize terminals for the retrieved IDs
+        activeTerminals.forEach((id) => {
+            createTerminal(id);
+        });
+    }, [getAllTerminals, createTerminal]);
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue); // Update active tab when clicked
@@ -122,3 +134,4 @@ const MultiTabTerminal = () => {
 };
 
 export default MultiTabTerminal;
+
