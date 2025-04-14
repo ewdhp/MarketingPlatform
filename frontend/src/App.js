@@ -5,9 +5,9 @@ import Layout from './components/Layout';
 import Automation from './views/Automation';
 import CodeEditor from './components/CodeEditor';
 import MainDashboard from './views/MainDashboard';
-import TwilioSMS from './components/login/TwilioSMS';
+import TwilioSMS from './components/TwilioSMS';
 import { AuthProvider, useAuth } from './context/AuthProvider';
-import MultiTerminal from './components/MultiTerminal';
+import Terminal from './components/Terminal';
 import { TerminalProvider } from './context/TerminalProvider';
 import { ReactFlowProvider } from 'reactflow'; // Import ReactFlowProvider
 
@@ -78,7 +78,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <MultiTerminal />
+                    <Terminal />
                   </Layout>
                 </ProtectedRoute>
               }

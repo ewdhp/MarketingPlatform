@@ -4,7 +4,7 @@ import { Tabs, Tab, Box, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { FitAddon } from 'xterm-addon-fit';
 
-const MultiTerminal = ({ terminalId }) => {
+const Terminal = ({ terminalId }) => {
     const { createTerminal, disposeTerminal } = useTerminalSocket();
     const terminalContainerRef = useRef(null);
 
@@ -54,7 +54,7 @@ const MultiTerminal = ({ terminalId }) => {
     );
 };
 
-const MultiTabTerminal = () => {
+const TerminalTabs = () => {
     const [terminals, setTerminals] = useState([]); // Track terminal IDs
     const [activeTab, setActiveTab] = useState(0); // Track the active tab
     const { createTerminal, getAllTerminals } = useTerminalSocket(); // Access the createTerminal and getAllTerminals functions
@@ -125,7 +125,7 @@ const MultiTabTerminal = () => {
                             height: '100%',
                         }}
                     >
-                        <MultiTerminal terminalId={id} />
+                        <Terminal terminalId={id} />
                     </Box>
                 ))}
             </Box>
@@ -133,5 +133,5 @@ const MultiTabTerminal = () => {
     );
 };
 
-export default MultiTabTerminal;
+export default TerminalTabs;
 

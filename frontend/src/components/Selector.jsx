@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Button, MenuItem, Select, TextField, Typography } from '@mui/material';
 import axios from 'axios';
 
-const ModelSelector = () => {
+const Selector = () => {
     const [selectedModel, setSelectedModel] = useState('openai'); // Default to OpenAI Gemini
     const [localModel, setLocalModel] = useState('');
     const [openAIKey, setOpenAIKey] = useState('');
@@ -142,4 +142,4 @@ const ModelSelector = () => {
     );
 };
 
-export default ModelSelector;
+export default Selector;
