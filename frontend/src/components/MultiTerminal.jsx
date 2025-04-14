@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTerminalSocket } from '../context/TerminalSocketProvider';
+import { useTerminalSocket } from '../context/TerminalProvider';
 import { Tabs, Tab, Box, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { FitAddon } from 'xterm-addon-fit';

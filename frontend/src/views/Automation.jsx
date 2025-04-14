@@ -1,31 +1,84 @@
-import React, { useState } from 'react';
-import 'reactflow/dist/style.css';
-import { Box, IconButton, Typography, Select, MenuItem } from '@mui/material';
-import { AddBox, PlayArrow, Layers, DeleteOutline, Psychology, UploadFile, Download } from '@mui/icons-material';
-import ReactFlow, { addEdge, MiniMap, Controls } from 'reactflow';
+import React, { useCallback, useState } from 'react';
+import '@xyflow/react/dist/style.css';
+import { Box, Typography, Select, MenuItem } from '@mui/material';
+import {
+  ReactFlow,
+  MiniMap,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  ReactFlowProvider,
+} from '@xyflow/react';
+
+// Import the base components for the specific node types
+import { PromptNode, CodeNode, LoadFileNode, OutputNode, LogNode, InputNode } from '../components/Nodes';
+
+// Custom Node Renderer
+const CustomNode = ({ data }) => {
+  const { type, label } = data;
+
+  // Render different node types based on the type property
+  switch (type) {
+    case 'AI':
+      return <PromptNode label={label} />;
+    case 'Code':
+      return <CodeNode label={label} />;
+    case 'Data':
+      return <LoadFileNode label={label} />;
+    case 'Feedback':
+      return label.includes('Log') ? <LogNode label={label} /> : <OutputNode label={label} />;
+    case 'Control':
+      return <InputNode label={label} />;
+    default:
+      return <Box>Unknown Node Type</Box>;
+  }
+};
+
+const initialNodes = [
+  { id: '1', position: { x: 150, y: 150 }, data: { label: 'AI Node', type: 'AI' }, type: 'custom' },
+  { id: '2', position: { x: 400, y: 150 }, data: { label: 'Code Node', type: 'Code' }, type: 'custom' },
+  { id: '3', position: { x: 250, y: 300 }, data: { label: 'Data Node', type: 'Data' }, type: 'custom' },
+];
+
+const initialEdges = [
+  { id: 'e1-2', source: '1', target: '2' },
+  { id: 'e2-3', source: '2', target: '3' },
+];
 
 const Automation = () => {
-  const [elements, setElements] = useState([]);
-  const [nodeId, setNodeId] = useState(0);
-  const [selectedModel, setSelectedModel] = useState('openai'); // Default model
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [selectedModel, setSelectedModel] = useState('openai');
+  const [contextMenu, setContextMenu] = useState(null);
 
-  const addNode = () => {
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
+
+  const addNodeAtPosition = (position, type) => {
     const newNode = {
-      id: `node_${nodeId}`,
-      type: 'default',
-      position: { x: Math.random() * 250, y: Math.random() * 250 },
-      data: { label: `Node ${nodeId}` },
+      id: `node_${nodes.length + 1}`,
+      position,
+      data: { label: `Node ${nodes.length + 1}`, type },
+      type: 'custom',
     };
-    setNodeId(nodeId + 1);
-    setElements((els) => [...els, newNode]);
+    setNodes((nds) => [...nds, newNode]);
   };
 
-  const onConnect = (params) => setElements((els) => addEdge(params, els));
+  const handleRightClick = (e) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
 
-  const onDelete = () => setElements((els) => removeElements(els.filter((el) => el.selected), els));
-
-  const removeElements = (elementsToRemove, elements) => {
-    return elements.filter((el) => !elementsToRemove.includes(el.id));
+  const handleContextMenuAction = (action, type) => {
+    if (action === 'addNode' && contextMenu) {
+      const canvasPosition = { x: contextMenu.x, y: contextMenu.y };
+      addNodeAtPosition(canvasPosition, type);
+    }
+    setContextMenu(null);
   };
 
   const handleModelChange = (event) => {
@@ -33,75 +86,116 @@ const Automation = () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column', // Ensure vertical stacking for controls and canvas
-        width: '100%', // Full width
-        height: '100vh', // Full height
-      }}
-    >
-      {/* Box with Controls */}
+    <ReactFlowProvider>
       <Box
         sx={{
           display: 'flex',
-          flexDirection: 'row', // Horizontal stacking for controls
-          alignItems: 'center',
-          padding: '15px', // Add padding if needed
+          flexDirection: 'column',
+          width: '100%',
+          height: '100vh',
         }}
       >
-        <Typography variant="h6" sx={{ flexGrow: 1, paddingLeft: '10px' }}>
-          Controls
-        </Typography>
-
-        {/* Model Selector */}
-        <Select
-          value={selectedModel}
-          onChange={handleModelChange}
-          size="small"
-          sx={{ marginLeft: 2, minWidth: 150 }}
+        {/* Controls */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: '15px',
+          }}
         >
-          <MenuItem value="openai">OpenAI Gemini</MenuItem>
-          <MenuItem value="local">Local Model</MenuItem>
-        </Select>
+          <Typography variant="h6" sx={{ flexGrow: 1, paddingLeft: '10px' }}>
+            Controls
+          </Typography>
 
-        <IconButton onClick={addNode}>
-          <AddBox />
-        </IconButton>
-        <IconButton>
-          <PlayArrow />
-        </IconButton>
-        <IconButton>
-          <Layers />
-        </IconButton>
-        <IconButton onClick={onDelete}>
-          <DeleteOutline />
-        </IconButton>
-        <IconButton>
-          <Psychology />
-        </IconButton>
-        <IconButton>
-          <UploadFile />
-        </IconButton>
-        <IconButton>
-          <Download />
-        </IconButton>
-      </Box>
+          <Select
+            value={selectedModel}
+            onChange={handleModelChange}
+            size="small"
+            sx={{ marginLeft: 2, minWidth: 150 }}
+          >
+            <MenuItem value="openai">OpenAI Gemini</MenuItem>
+            <MenuItem value="local">Local Model</MenuItem>
+          </Select>
+        </Box>
 
-      {/* React Flow Canvas */}
-      <Box
-        sx={{
-          flexGrow: 1, // Expand to fill remaining height
-          backgroundColor: '#f5f5f5', // Set a background color
-          width: '100%', // Full width
-        }}
-      >
-        <ReactFlow elements={elements} onConnect={onConnect} onElementsRemove={onDelete}>
-          <MiniMap />
-          <Controls />
-        </ReactFlow>
+        {/* React Flow Canvas */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            backgroundColor: '#f5f5f5',
+            width: '100%',
+            position: 'relative',
+          }}
+          onContextMenu={handleRightClick}
+        >
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={{ custom: CustomNode }}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+          >
+            <MiniMap />
+            <Controls />
+            <Background variant="dots" gap={12} size={1} />
+
+            {contextMenu && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: contextMenu.y,
+                  left: contextMenu.x,
+                  background: '#fff',
+                  border: '1px solid #ccc',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  zIndex: 10,
+                }}
+              >
+                {/* Context menu options for different node types */}
+                <Typography
+                  variant="body1"
+                  sx={{ cursor: 'pointer', marginBottom: '5px' }}
+                  onClick={() => handleContextMenuAction('addNode', 'AI')}
+                >
+                  Add AI Node (Prompt)
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{ cursor: 'pointer', marginBottom: '5px' }}
+                  onClick={() => handleContextMenuAction('addNode', 'Code')}
+                >
+                  Add Code Node
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{ cursor: 'pointer', marginBottom: '5px' }}
+                  onClick={() => handleContextMenuAction('addNode', 'Data')}
+                >
+                  Add Data Node (Load File)
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{ cursor: 'pointer', marginBottom: '5px' }}
+                  onClick={() => handleContextMenuAction('addNode', 'Feedback')}
+                >
+                  Add Feedback Node (Output/Log)
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{ cursor: 'pointer', marginBottom: '5px' }}
+                  onClick={() => handleContextMenuAction('addNode', 'Control')}
+                >
+                  Add Control Node (Input)
+                </Typography>
+              </Box>
+            )}
+          </ReactFlow>
+        </Box>
       </Box>
-    </Box>
+    </ReactFlowProvider>
   );
 };
 

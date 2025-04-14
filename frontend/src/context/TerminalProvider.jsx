@@ -3,10 +3,10 @@ import { Terminal } from 'xterm';
 import 'xterm/css/xterm.css';
 
 // Create Context
-const TerminalSocketContext = createContext();
+const TerminalContext = createContext();
 
 // Provider Component
-export const TerminalSocketProvider = ({ children }) => {
+export const TerminalProvider = ({ children }) => {
     const terminals = useRef(new Map());
 
     const createTerminal = (id) => {
@@ -131,7 +131,7 @@ export const TerminalSocketProvider = ({ children }) => {
     };
 
     return (
-        <TerminalSocketContext.Provider
+        <TerminalContext.Provider
             value={{
                 createTerminal,
                 getTerminal,
@@ -140,15 +140,15 @@ export const TerminalSocketProvider = ({ children }) => {
             }}
         >
             {children}
-        </TerminalSocketContext.Provider>
+        </TerminalContext.Provider>
     );
 };
 
 // Custom Hook for Using Context
 export const useTerminalSocket = () => {
-    const context = useContext(TerminalSocketContext);
+    const context = useContext(TerminalContext);
     if (!context) {
-        throw new Error('useTerminalSocket must be used within a TerminalSocketProvider');
+        throw new Error('useTerminalSocket must be used within a TerminalProvider');
     }
     return context;
 };

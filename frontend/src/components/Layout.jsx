@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthProvider';
 import AppsIcon from '@mui/icons-material/Apps';
 import WidgetsIcon from '@mui/icons-material/Widgets';
 import ContentIcon from '@mui/icons-material/Article';

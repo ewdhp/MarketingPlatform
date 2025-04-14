@@ -6,9 +6,10 @@ import Automation from './views/Automation';
 import CodeEditor from './components/CodeEditor';
 import MainDashboard from './views/MainDashboard';
 import TwilioSMS from './components/login/TwilioSMS';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthProvider';
 import MultiTerminal from './components/MultiTerminal';
-import { TerminalSocketProvider } from './context/TerminalSocketProvider';
+import { TerminalProvider } from './context/TerminalProvider';
+import { ReactFlowProvider } from 'reactflow'; // Import ReactFlowProvider
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -33,7 +34,7 @@ const App = () => {
   return (
     <Router>
       <AuthProvider>
-        <TerminalSocketProvider> {/* Lift TerminalSocketProvider to wrap the entire app */}
+        <TerminalProvider>
           <CssBaseline />
           <Routes>
             {/* Entry Page (Login) */}
@@ -61,9 +62,13 @@ const App = () => {
               path="/automation"
               element={
                 <ProtectedRoute>
-                  <Layout>
-                    <Automation />
-                  </Layout>
+                  <ReactFlowProvider>
+                    <Layout>
+                      {/* Wrap Automation with ReactFlowProvider */}
+                      <Automation />
+
+                    </Layout>
+                  </ReactFlowProvider>
                 </ProtectedRoute>
               }
             />
@@ -92,7 +97,7 @@ const App = () => {
             {/* Fallback Route for Not Found */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </TerminalSocketProvider>
+        </TerminalProvider>
       </AuthProvider>
     </Router>
   );
