@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthProvider';
 import Terminal from './components/Terminal';
 import { TerminalProvider } from './context/TerminalProvider';
 import { ReactFlowProvider } from 'reactflow'; // Import ReactFlowProvider
+import ResizableLayout from './components/ResizableLayout';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -51,7 +52,7 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <CodeEditor />
+                    <ResizableLayout />
                   </Layout>
                 </ProtectedRoute>
               }

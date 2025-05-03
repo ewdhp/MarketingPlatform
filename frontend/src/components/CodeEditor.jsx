@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, IconButton } from '@mui/material';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 import { Editor } from '@monaco-editor/react';
 
-const CodeEditorWithExplorer = () => {
+const CodeEditor = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [fileContent, setFileContent] = useState('// Select a file to edit or create a new one.');
+    const [isExplorerVisible, setIsExplorerVisible] = useState(false); // Default to hidden
 
     const files = [
         { name: 'index.js', type: 'file', content: '// This is the index.js file.' },
@@ -32,47 +35,72 @@ const CodeEditorWithExplorer = () => {
 
     return (
         <Box sx={{ display: 'flex', height: '100vh', width: '100%' }}>
-            {/* File Explorer */}
+            {/* Toggle Button */}
             <Box
                 sx={{
-                    width: 240,
-                    backgroundColor: '#f5f5f5',
-                    borderRight: '1px solid #ddd',
-                    overflowY: 'auto',
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    zIndex: 10,
                 }}
             >
-                <Typography variant="h6" sx={{ padding: 2, borderBottom: '1px solid #ddd' }}>
-                    Scripts
-                </Typography>
-                <List>
-                    {files.map((file) => (
-                        <React.Fragment key={file.name}>
-                            <ListItem disablePadding>
-                                <ListItemButton onClick={() => handleFileClick(file)}>
-                                    <ListItemIcon>
-                                        {file.type === 'file' ? <InsertDriveFileIcon /> : <FolderIcon />}
-                                    </ListItemIcon>
-                                    <ListItemText primary={file.name} />
-                                </ListItemButton>
-                            </ListItem>
-                            {file.type === 'folder' && file.children && (
-                                <List sx={{ paddingLeft: 4 }}>
-                                    {file.children.map((child) => (
-                                        <ListItem key={child.name} disablePadding>
-                                            <ListItemButton onClick={() => handleFileClick(child)}>
-                                                <ListItemIcon>
-                                                    <InsertDriveFileIcon />
-                                                </ListItemIcon>
-                                                <ListItemText primary={child.name} />
-                                            </ListItemButton>
-                                        </ListItem>
-                                    ))}
-                                </List>
-                            )}
-                        </React.Fragment>
-                    ))}
-                </List>
+                <IconButton
+                    onClick={() => setIsExplorerVisible(!isExplorerVisible)}
+                    size="small"
+                    sx={{
+                        backgroundColor: '#f5f5f5',
+                        border: '1px solid #ddd',
+                        '&:hover': { backgroundColor: '#e0e0e0' },
+                    }}
+                >
+                    {isExplorerVisible ? <CloseIcon /> : <MenuIcon />}
+                </IconButton>
             </Box>
+
+            {/* File Explorer */}
+            {isExplorerVisible && (
+                <Box
+                    sx={{
+                        width: 240,
+                        backgroundColor: '#f5f5f5',
+                        borderRight: '1px solid #ddd',
+                        overflowY: 'auto',
+                        transition: 'width 0.3s ease',
+                    }}
+                >
+                    <Typography variant="h6" sx={{ padding: 2, borderBottom: '1px solid #ddd' }}>
+                        Scripts
+                    </Typography>
+                    <List>
+                        {files.map((file) => (
+                            <React.Fragment key={file.name}>
+                                <ListItem disablePadding>
+                                    <ListItemButton onClick={() => handleFileClick(file)}>
+                                        <ListItemIcon>
+                                            {file.type === 'file' ? <InsertDriveFileIcon /> : <FolderIcon />}
+                                        </ListItemIcon>
+                                        <ListItemText primary={file.name} />
+                                    </ListItemButton>
+                                </ListItem>
+                                {file.type === 'folder' && file.children && (
+                                    <List sx={{ paddingLeft: 4 }}>
+                                        {file.children.map((child) => (
+                                            <ListItem key={child.name} disablePadding>
+                                                <ListItemButton onClick={() => handleFileClick(child)}>
+                                                    <ListItemIcon>
+                                                        <InsertDriveFileIcon />
+                                                    </ListItemIcon>
+                                                    <ListItemText primary={child.name} />
+                                                </ListItemButton>
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </List>
+                </Box>
+            )}
 
             {/* Code Editor */}
             <Box sx={{ flexGrow: 1 }}>
@@ -102,4 +130,4 @@ const CodeEditorWithExplorer = () => {
     );
 };
 
-export default CodeEditorWithExplorer;
+export default CodeEditor;
