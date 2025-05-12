@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, Tab, Box, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
-const CTabs = ({ tabs, renderTabContent, onAddTab }) => {
+const CTabs = ({ tabs, renderTabContent, onAddTab, onTabChange }) => {
     const [activeTab, setActiveTab] = useState(0); // Track the active tab
 
     useEffect(() => {
@@ -14,6 +14,9 @@ const CTabs = ({ tabs, renderTabContent, onAddTab }) => {
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue); // Update active tab when clicked
+        if (onTabChange) {
+            onTabChange(newValue); // Notify parent of tab change
+        }
     };
 
     const handleAddTab = () => {

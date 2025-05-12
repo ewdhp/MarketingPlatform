@@ -46,7 +46,7 @@ const ResizableLayoutMui = ({ leftComponent, rightComponent }) => {
             {/* Resizable Divider */}
             <Box
                 sx={{
-                    width: "5px",
+                    width: "10px",
                     cursor: "ew-resize",
                     backgroundColor: "#ccc",
                 }}
@@ -56,7 +56,6 @@ const ResizableLayoutMui = ({ leftComponent, rightComponent }) => {
             {/* Right Panel */}
             <Box
                 sx={{
-                    flex: 1,
                     backgroundColor: "#e0e0e0",
                     display: "flex",
                     flexDirection: "column",

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Box } from "@mui/material";
 import { ReactFlow, useNodesState, useEdgesState, ReactFlowProvider } from "@xyflow/react";
 import { Editor } from "@monaco-editor/react";
 import "@xyflow/react/dist/style.css";
-import ResizableLayout from "./ResizableLayout";
 
 const initialNodes = [
     { id: "1", type: "input", data: { label: "Input Node" }, position: { x: 250, y: 0 } },
@@ -21,7 +20,7 @@ const initialEdges = [
 const Automation = ({ instanceId }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-    const [editorContent, setEditorContent] = useState("// Write your code here");
+    const editorRef = useRef(null);
 
     // Load nodes and edges from localStorage specific to the instance on mount
     useEffect(() => {
@@ -43,9 +42,18 @@ const Automation = ({ instanceId }) => {
     };
 
     return (
-        <ResizableLayout
-            leftComponent={
-                <ReactFlowProvider>
+        <ReactFlowProvider>
+            <Box sx={{ display: "flex", width: "100%", height: "100%" }}>
+                {/* Left Section for Nodes */}
+                <Box
+                    sx={{
+                        width: "60%", // Fixed width for the left section
+                        backgroundColor: "lightgray",
+                        borderRight: "2px solid #ccc",
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -55,23 +63,29 @@ const Automation = ({ instanceId }) => {
                         connectionLineType="smoothstep"
                         fitView
                     />
-                </ReactFlowProvider>
+                </Box>
 
-            }
-            rightComponent={
-
-                <Editor
-                    language="javascript"
-                    theme="vs-light"
-                    options={{
-                        minimap: { enabled: false },
-                        fontSize: 14,
+                {/* Right Section for Code Editor */}
+                <Box
+                    sx={{
+                        flex: 1, // Take the remaining space
+                        backgroundColor: "#e0e0e0",
+                        display: "flex",
+                        flexDirection: "column",
                     }}
-                />
-
-
-            }
-        />
+                >
+                    <Editor
+                        language="javascript"
+                        theme="vs-light"
+                        options={{
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                        }}
+                        onMount={(editor) => (editorRef.current = editor)}
+                    />
+                </Box>
+            </Box>
+        </ReactFlowProvider>
     );
 };
 
