@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTerminalSocket } from '../context/TerminalProvider';
 import { Tabs, Tab, Box, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { FitAddon } from 'xterm-addon-fit';
 import SigmaGraph from './SigmaGraph';
-import { Editor } from "@monaco-editor/react";
+import { Editor } from '@monaco-editor/react';
+import ResizableLayoutMui from './ResizableLayout';
 const Terminal = ({ terminalId }) => {
     const { createTerminal, disposeTerminal } = useTerminalSocket();
     const terminalContainerRef = useRef(null);
-    const editorRef = useRef(null);
     useEffect(() => {
         if (!terminalContainerRef.current) {
             console.error('Terminal container is not available.');
@@ -43,40 +43,42 @@ const Terminal = ({ terminalId }) => {
 
     return (
         <>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'row',
-                width: '100%',
-                height: '100%',
-                background: 'gray',
-                overflow: 'hidden',
-                padding: '5px',
-            }}>
-                <div style={{
-                    display: 'flex', flexDirection: 'column',
-                    height: '100%', width: '100%'
-                }}>
-                    <div style={{ display: 'flex', flexDirection: 'row', width: '100%', height: '65%' }}>
-                        <SigmaGraph />
+            <ResizableLayoutMui
+                leftComponent={
+                    <>
 
-                    </div>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            width: '100vw',
+                            height: '100%',
+                            display: 'flex',
+                        }}>
+                            <div style={{ width: '100%', height: '100%' }}>
+                                <SigmaGraph />
+                            </div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    width: '100%',
+                                    height: '35%',
+                                    overflow: 'hidden',
+
+                                }}
+                                ref={terminalContainerRef}
+                            ></div>
+                        </div>
+                    </>
+                }
+                rightComponent={
+                    <>
+                        <Editor />
+
+                    </>
+                }
+            />
 
 
-                    <div
-                        style={{
-                            width: '100%',
-                            height: '35%',
-                            background: '#041f4b',
-                            overflow: 'hidden',
-                            padding: '5px',
-                        }}
-                        ref={terminalContainerRef}
-
-                    ></div>
-
-                </div>
-
-            </div>
         </>
     );
 };
@@ -108,19 +110,26 @@ const TerminalTabs = () => {
     };
 
     return (
-        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{
+            width: '100%', height: '100%',
+            display: 'flex', flexDirection: 'column'
+        }}>
             {/* Tabs Section at the Top */}
-            <Box sx={{ display: 'flex', alignItems: 'center', padding: '8px', borderBottom: '1px solid #ccc' }}>
+            <Box sx={{
+                display: 'flex', alignItems: 'center',
+                padding: '8px', borderBottom: '1px solid #ccc'
+            }}>
                 <Tabs
                     value={activeTab}
                     onChange={handleTabChange}
                     variant="scrollable"
                     scrollButtons="auto"
                     aria-label="Terminal Tabs"
-                    sx={{ flexGrow: 1 }} // Make tabs take the available width
+                    sx={{ flexGrow: 1 }}
                 >
                     {terminals.map((id, index) => (
-                        <Tab key={id} label={`Terminal ${index + 1}`} />
+                        <Tab key={id} label=
+                            {`Terminal ${index + 1}`} />
                     ))}
                 </Tabs>
                 <Button
@@ -140,7 +149,7 @@ const TerminalTabs = () => {
                 <Box
                     key={id}
                     sx={{
-                        display: activeTab === index ? 'block' : 'none', // Show only active terminal
+                        display: activeTab === index ? 'block' : 'none',
                         width: '100%',
                         height: '100%',
                     }}

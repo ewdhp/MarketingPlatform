@@ -2,12 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import Layout from './components/Layout';
-import ResizableLayoutMui from './components/ResizableLayout';
 import TwilioSMS from './components/TwilioSMS';
 import { AuthProvider, useAuth } from './context/AuthProvider';
-import Terminal from './components/Terminal';
 import { TerminalProvider } from './context/TerminalProvider';
-import { Editor } from '@monaco-editor/react';
+import Terminal from './components/Terminal';
+import ResizableLayoutMui from './components/ResizableLayout';
+import Editor from "@monaco-editor/react";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -46,40 +46,14 @@ const App = () => {
             />
 
             {/* Protected Routes */}
-
-            <Route
-              path="/terminal"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <Terminal />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <ResizableLayoutMui
 
-                      rightComponent={
-                        <Terminal terminalId="main-terminal" />
-                      }
-                      leftComponent={<Editor
-                        height="100%"
-                        width="100%"
-                        defaultLanguage="javascript"
-                        defaultValue="// Write your code here"
-                        theme="vs-light"
-                        options={{
-                          minimap: { enabled: false },
-                          scrollBeyondLastLine: false,
-                          automaticLayout: true,
-                        }}
-                      />}
-                    />
+                    <Terminal terminalId="main-terminal" />
+
                   </Layout>
                 </ProtectedRoute>
               }

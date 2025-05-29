@@ -22,6 +22,7 @@ export default function SigmaGraph() {
 
             enableEdgeHovering: true,
             edgeHoverSizeRatio: 5,
+            edgeColor: 'white'
         });
 
         // --- Drag node logic ---
