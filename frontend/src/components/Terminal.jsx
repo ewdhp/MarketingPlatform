@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTerminalSocket } from '../context/TerminalProvider';
 import { Tabs, Tab, Box, Button } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import TerminalIcon from '@mui/icons-material/Terminal';
 import { FitAddon } from 'xterm-addon-fit';
-
+import SigmaGraph from './SigmaGraph';
+import { Editor } from "@monaco-editor/react";
 const Terminal = ({ terminalId }) => {
     const { createTerminal, disposeTerminal } = useTerminalSocket();
     const terminalContainerRef = useRef(null);
-
+    const editorRef = useRef(null);
     useEffect(() => {
         if (!terminalContainerRef.current) {
             console.error('Terminal container is not available.');
@@ -41,23 +42,49 @@ const Terminal = ({ terminalId }) => {
     }, [createTerminal, disposeTerminal, terminalId]);
 
     return (
-        <div
-            style={{
+        <>
+            <div style={{
+                display: 'flex',
+                flexDirection: 'row',
                 width: '100%',
                 height: '100%',
-                background: '#041f4b',
+                background: 'gray',
                 overflow: 'hidden',
                 padding: '5px',
-            }}
-            ref={terminalContainerRef}
-        />
+            }}>
+                <div style={{
+                    display: 'flex', flexDirection: 'column',
+                    height: '100%', width: '100%'
+                }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', width: '100%', height: '65%' }}>
+                        <SigmaGraph />
+
+                    </div>
+
+
+                    <div
+                        style={{
+                            width: '100%',
+                            height: '35%',
+                            background: '#041f4b',
+                            overflow: 'hidden',
+                            padding: '5px',
+                        }}
+                        ref={terminalContainerRef}
+
+                    ></div>
+
+                </div>
+
+            </div>
+        </>
     );
 };
 
 const TerminalTabs = () => {
     const [terminals, setTerminals] = useState([]); // Track terminal IDs
     const [activeTab, setActiveTab] = useState(0); // Track the active tab
-    const { createTerminal, getAllTerminals } = useTerminalSocket(); // Access the createTerminal and getAllTerminals functions
+    const { createTerminal, getAllTerminals } = useTerminalSocket();
 
     useEffect(() => {
         // Get all active terminals when the component is mounted
@@ -98,37 +125,29 @@ const TerminalTabs = () => {
                 </Tabs>
                 <Button
                     onClick={handleAddTerminal}
-                    variant="contained"
-                    color="primary"
-                    startIcon={<AddIcon />}
-                    sx={{ marginLeft: 2 }}
+                    startIcon={
+                        <TerminalIcon sx={{ fontSize: 32 }} /> // Increase icon size here
+                    }
+                    sx={{ color: 'white' }}
                 >
-                    Add Terminal
                 </Button>
             </Box>
 
             {/* Terminal Content Section */}
-            <Box
-                sx={{
-                    flexGrow: 1, // Allow terminal content to take remaining height
-                    backgroundColor: 'white',
-                    overflow: 'hidden',
-                    padding: '10px',
-                }}
-            >
-                {terminals.map((id, index) => (
-                    <Box
-                        key={id}
-                        sx={{
-                            display: activeTab === index ? 'block' : 'none', // Show only active terminal
-                            width: '100%',
-                            height: '100%',
-                        }}
-                    >
-                        <Terminal terminalId={id} />
-                    </Box>
-                ))}
-            </Box>
+
+            {terminals.map((id, index) => (
+                <Box
+                    key={id}
+                    sx={{
+                        display: activeTab === index ? 'block' : 'none', // Show only active terminal
+                        width: '100%',
+                        height: '100%',
+                    }}
+                >
+                    <Terminal terminalId={id} />
+                </Box>
+            ))}
+
         </Box>
     );
 };

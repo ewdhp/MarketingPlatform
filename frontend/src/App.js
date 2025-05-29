@@ -2,15 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import Layout from './components/Layout';
-import Automation from './views/Automation';
-import CodeEditor from './components/CodeEditor';
-import MainDashboard from './views/MainDashboard';
+import ResizableLayoutMui from './components/ResizableLayout';
 import TwilioSMS from './components/TwilioSMS';
 import { AuthProvider, useAuth } from './context/AuthProvider';
 import Terminal from './components/Terminal';
 import { TerminalProvider } from './context/TerminalProvider';
-import { ReactFlowProvider } from 'reactflow'; // Import ReactFlowProvider
-import ResizableLayout from './components/ResizableLayout';
+import { Editor } from '@monaco-editor/react';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -47,32 +44,8 @@ const App = () => {
                 </RedirectIfAuthenticated>
               }
             />
-            <Route
-              path="/editor"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <ResizableLayout />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
 
             {/* Protected Routes */}
-            <Route
-              path="/automation"
-              element={
-                <ProtectedRoute>
-                  <ReactFlowProvider>
-                    <Layout>
-                      {/* Wrap Automation with ReactFlowProvider */}
-                      <Automation />
-
-                    </Layout>
-                  </ReactFlowProvider>
-                </ProtectedRoute>
-              }
-            />
 
             <Route
               path="/terminal"
@@ -89,7 +62,24 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <MainDashboard />
+                    <ResizableLayoutMui
+
+                      rightComponent={
+                        <Editor
+                          height="100%"
+                          width="100%"
+                          defaultLanguage="javascript"
+                          defaultValue="// Write your code here"
+                          theme="vs-light"
+                          options={{
+                            minimap: { enabled: false },
+                            scrollBeyondLastLine: false,
+                            automaticLayout: true,
+                          }}
+                        />
+                      }
+                      leftComponent={<Terminal terminalId="main-terminal" />}
+                    />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, Tab, Box, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-
+import SigmaGraph from './SigmaGraph'; // Adjust the import path as necessary   
 const CTabs = ({ tabs, renderTabContent, onAddTab, onTabChange }) => {
     const [activeTab, setActiveTab] = useState(0); // Track the active tab
 
@@ -69,6 +69,7 @@ const CTabs = ({ tabs, renderTabContent, onAddTab, onTabChange }) => {
                         }}
                     >
                         {renderTabContent(tab, index)}
+
                     </Box>
                 ))}
             </Box>
