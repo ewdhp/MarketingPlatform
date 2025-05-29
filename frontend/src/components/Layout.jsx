@@ -88,7 +88,7 @@ const Layout = ({ children }) => {
             height: '100vh',
             backgroundColor: 'white',
             overflow: 'auto',
-            marginLeft: '60px', // Adjust this based on the width of the drawer
+            marginLeft: '60px',
 
           };
         }}

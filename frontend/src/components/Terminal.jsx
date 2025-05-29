@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTerminalSocket } from '../context/TerminalProvider';
 import { Tabs, Tab, Box, Button } from '@mui/material';
-import TerminalIcon from '@mui/icons-material/Terminal';
+import AddIcon from '@mui/icons-material/Add';
 import { FitAddon } from 'xterm-addon-fit';
 import SigmaGraph from './SigmaGraph';
 import { Editor } from "@monaco-editor/react";
@@ -125,11 +125,12 @@ const TerminalTabs = () => {
                 </Tabs>
                 <Button
                     onClick={handleAddTerminal}
-                    startIcon={
-                        <TerminalIcon sx={{ fontSize: 32 }} /> // Increase icon size here
-                    }
-                    sx={{ color: 'white' }}
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddIcon />}
+                    sx={{ marginLeft: 2 }}
                 >
+                    Add Terminal
                 </Button>
             </Box>
 

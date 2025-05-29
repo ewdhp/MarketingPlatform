@@ -65,20 +65,20 @@ const App = () => {
                     <ResizableLayoutMui
 
                       rightComponent={
-                        <Editor
-                          height="100%"
-                          width="100%"
-                          defaultLanguage="javascript"
-                          defaultValue="// Write your code here"
-                          theme="vs-light"
-                          options={{
-                            minimap: { enabled: false },
-                            scrollBeyondLastLine: false,
-                            automaticLayout: true,
-                          }}
-                        />
+                        <Terminal terminalId="main-terminal" />
                       }
-                      leftComponent={<Terminal terminalId="main-terminal" />}
+                      leftComponent={<Editor
+                        height="100%"
+                        width="100%"
+                        defaultLanguage="javascript"
+                        defaultValue="// Write your code here"
+                        theme="vs-light"
+                        options={{
+                          minimap: { enabled: false },
+                          scrollBeyondLastLine: false,
+                          automaticLayout: true,
+                        }}
+                      />}
                     />
                   </Layout>
                 </ProtectedRoute>
